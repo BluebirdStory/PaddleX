@@ -35,7 +35,6 @@ comments: true
 > ❗ 在快速集成前，请先安装 PaddleX 的 wheel 包，详细请参考 [PaddleX本地安装教程](../../../installation/installation.md)
 
 完成 wheel 包的安装后，几行代码即可完成旋转目标检测模块的推理，可以任意切换该模块下的模型，您也可以将旋转目标检测的模块中的模型推理集成到您的项目中。运行以下代码前，请您下载[示例图片](https://paddle-model-ecology.bj.bcebos.com/paddlex/imgs/demo_image/rotated_object_detection_001.png)到本地。
-
 ```python
 from paddlex import create_model
 model = create_model(model_name="PP-YOLOE-R-L")
@@ -335,7 +334,7 @@ python main.py -c paddlex/configs/rotated_object_detection/PP-YOLOE-R-L.yaml \
 <li><code>attributes.val_sample_paths</code>：该数据集验证集样本可视化图片相对路径列表；</li>
 </ul>
 <p>另外，数据集校验还对数据集中所有类别的样本数量分布情况进行了分析，并绘制了分布直方图（histogram.png）：</p>
-<p><img src="https://raw.githubusercontent.com//PaddleX_doc_images/main/images/modules/robj_det/01.png"></p></details>
+<p><img src="https://raw.githubusercontent.com/cuicheng01/PaddleX_doc_images/refs/heads/main/images/modules/rotated_object_detection/01.png"></p></details>
 
 #### 4.1.3 数据集格式转换/数据集划分（可选）
 在您完成数据校验之后，可以通过<b>修改配置文件</b>或是<b>追加超参数</b>的方式对数据集的格式进行转换，也可以对数据集的训练/验证比例进行重新划分。
