@@ -61,7 +61,7 @@ for res in output:
 
 可视化图片如下：
 
-<img src="https://raw.githubusercontent.com/BluebirdStory/PaddleX_doc_images/main/images/modules/robj_det/rotated_object_detection_001_res.png">
+<img src="https://raw.githubusercontent.com/cuicheng01/PaddleX_doc_images/refs/heads/main/images/modules/rotated_object_detection/rotated_object_detection_001_res.png">
 
 
 相关方法、参数等说明如下：
@@ -336,7 +336,7 @@ python main.py -c paddlex/configs/rotated_object_detection/PP-YOLOE-R_L.yaml \
 <li><code>attributes.val_sample_paths</code>：该数据集验证集样本可视化图片相对路径列表；</li>
 </ul>
 <p>另外，数据集校验还对数据集中所有类别的样本数量分布情况进行了分析，并绘制了分布直方图（histogram.png）：</p>
-<p><img src="https://raw.githubusercontent.com/BluebirdStory/PaddleX_doc_images/main/images/modules/robj_det/01.png"></p></details>
+<p><img src="https://raw.githubusercontent.com//PaddleX_doc_images/main/images/modules/robj_det/01.png"></p></details>
 
 #### 4.1.3 数据集格式转换/数据集划分（可选）
 在您完成数据校验之后，可以通过<b>修改配置文件</b>或是<b>追加超参数</b>的方式对数据集的格式进行转换，也可以对数据集的训练/验证比例进行重新划分。

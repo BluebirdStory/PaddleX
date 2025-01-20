@@ -221,7 +221,7 @@ for res in output:
 
 可视化图片如下：
 
-<img src="https://raw.githubusercontent.com/BluebirdStory/PaddleX_doc_images/main/images/modules/semantic_segmentation/general_semantic_segmentation_002_res.png">
+<img src="https://raw.githubusercontent.com/cuicheng01/PaddleX_doc_images/refs/heads/main/images/modules/semanticseg/general_semantic_segmentation_002_res.png">
 
 相关方法、参数等说明如下：
 

@@ -134,7 +134,7 @@ After executing the above command, PaddleX will verify the dataset and count the
 <li><code>attributes.val_sample_paths</code>：The relative path list of visualized validation set sample images in this dataset;</li>
 </ul>
 <p>Additionally, the dataset verification also analyzes the distribution of sample quantities for all categories in the dataset and draws a distribution histogram (histogram.png):</p>
-<p><img src="https://raw.githubusercontent.com/BluebirdStory/PaddleX_doc_images/main/images/modules/robj_det/01.png"></p></details>
+<p><img src="https://raw.githubusercontent.com/cuicheng01/PaddleX_doc_images/refs/heads/main/images/modules/rotated_object_detection/01.png"></p></details>
 
 #### 4.1.3 Dataset Format Conversion/Dataset Splitting (Optional)
 After completing the data verification, you can convert the dataset format or re-split the training/validation ratio of the dataset by modifying the configuration file or adding hyperparameters.
@@ -255,4 +255,3 @@ The model can be directly integrated into the PaddleX pipelines or directly into
 2.<b>Module Integration</b>
 
 The weights you produce can be directly integrated into the object detection module. Refer to the Python example code in [Quick Integration](#iii-quick-integration), and simply replace the model with the path to your trained model.
-

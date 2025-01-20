@@ -195,8 +195,7 @@ for res in output:
 
 可视化图片如下：
 
-<img src="https://raw.githubusercontent.com/BluebirdStory/PaddleX_doc_images/main/images/modules/instance_segmentation/general_instance_segmentation_004_res.png">
-
+<img src="https://raw.githubusercontent.com/cuicheng01/PaddleX_doc_images/refs/heads/main/images/modules/instanceseg/general_instance_segmentation_004_res.png">
 
 相关方法、参数等说明如下：
 

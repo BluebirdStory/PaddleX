@@ -74,8 +74,7 @@ for res in results:
 
 可视化图片如下：
 
-<img src="https://raw.githubusercontent.com/BluebirdStory/PaddleX_doc_images/main/images/modules/open_vocabulary_segmentation/open_vocabulary_segmentation_res.jpg">
-
+<img src="https://raw.githubusercontent.com/cuicheng01/PaddleX_doc_images/refs/heads/main/images/modules/open_vocabulary_segmentation/open_vocabulary_segmentation_res.jpg">
 
 相关方法、参数等说明如下：
 
