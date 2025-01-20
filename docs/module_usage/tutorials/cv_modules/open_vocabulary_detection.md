@@ -41,8 +41,8 @@ comments: true
 
 ```python
 from paddlex import create_model
-model = create_model('GroundingDINO-T')
-results = model.predict('open_vocabulary_detection.jpg', prompt = 'bus . walking man . rearview mirror .')
+model = create_model(model_name='GroundingDINO-T')
+results = model.predict(input='open_vocabulary_detection.jpg', prompt = 'bus . walking man . rearview mirror .', batch_size=1)
 for res in results:
     res.print()
     res.save_to_img(f"./output/")
@@ -156,7 +156,7 @@ for res in results:
 <td>模型预测使用的提示词</td>
 <td><code>str</code></td>
 <td>任意字符串</td>
-<td>1</td>
+<td>无</td>
 </tr>
 </table>
 

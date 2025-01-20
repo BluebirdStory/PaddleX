@@ -203,8 +203,8 @@ comments: true
 
 ```python
 from paddlex import create_model
-model = create_model("PP-LiteSeg-T")
-output = model.predict("general_semantic_segmentation_002.png", batch_size=1)
+model = create_model(model_name="PP-LiteSeg-T")
+output = model.predict(input="general_semantic_segmentation_002.png", batch_size=1)
 for res in output:
     res.print()
     res.save_to_img("./output/")
