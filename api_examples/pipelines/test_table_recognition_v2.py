@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-import random
-import numpy as np
-import cv2
-import PIL
-from PIL import Image, ImageDraw, ImageFont
-from ....utils.fonts import PINGFANG_FONT_FILE_PATH
-from ...common.result import BaseResult
+from paddlex import create_pipeline
 
+pipeline = create_pipeline(pipeline="table_recognition_v2")
 
-class VisualInfoResult(BaseResult):
-    """VisualInfoResult"""
+output = pipeline.predict("./test_samples/table_recognition.jpg")
 
-    pass
+for res in output:
+    res.print()
+    res.save_to_img("./output")
+    res.save_to_json("./output")
+    res.save_to_xlsx("./output")
+    res.save_to_html("./output")
