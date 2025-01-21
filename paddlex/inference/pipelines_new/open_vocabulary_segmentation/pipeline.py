@@ -71,7 +71,7 @@ class OpenVocabularySegmentationPipeline(BasePipeline):
 
         Args:
             input (str | list[str] | np.ndarray | list[np.ndarray]): The input image(s) or path(s) to the images.
-            prompt (list[list[int]] | np.ndarray): The prompt for the input image(s).
+            prompt (list[list[float]] | np.ndarray): The prompt for the input image(s).
             prompt_type (str): The type of prompt, either 'box' or 'point'. Default is 'box'.
             **kwargs: Additional keyword arguments that can be passed to the function.
 
