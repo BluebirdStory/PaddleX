@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Union, Tuple, List
 import numpy as np
 from ...utils.pp_option import PaddlePredictorOption
 from ..base import BasePipeline
@@ -62,8 +62,8 @@ class OpenVocabularySegmentationPipeline(BasePipeline):
 
     def predict(
         self,
-        input: str | list[str] | np.ndarray | list[np.ndarray],
-        prompt: list[list[float]] | np.ndarray,
+        input: Union[str, List[str], np.ndarray, List[np.ndarray]],
+        prompt: Union[List[List[float]], np.ndarray],
         prompt_type: str = "box",
         **kwargs
     ) -> SAMSegResult:
