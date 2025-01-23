@@ -33,10 +33,19 @@ from ....utils.file_interface import custom_open
 
 
 class FormulaRecResult(BaseCVResult):
+    def _get_input_fn(self):
+        fn = super()._get_input_fn()
+        if (page_idx := self["page_index"]) is not None:
+            fp = Path(fn)
+            stem, suffix = fp.stem, fp.suffix
+            return f"{stem}_{page_idx}{suffix}"
+        else:
+            return fn
+
     def _to_str(self, *args, **kwargs):
         data = copy.deepcopy(self)
         data.pop("input_img")
-        _str = JsonMixin._to_str(data, *args, **kwargs)["res"].replace("\\\\", "\\")
+        _str = JsonMixin._to_str(data, *args, **kwargs)["res"]
         return {"res": _str}
 
     def _to_json(self, *args, **kwargs):
@@ -150,7 +159,7 @@ def generate_tex_file(tex_file_path: str, equation: str) -> None:
         start_template = (
             r"\documentclass{article}" + "\n"
             r"\usepackage{cite}" + "\n"
-            r"\usepackage{amsmath,amssymb,amsfonts}" + "\n"
+            r"\usepackage{amsmath,amssymb,amsfonts,upgreek}" + "\n"
             r"\usepackage{graphicx}" + "\n"
             r"\usepackage{textcomp}" + "\n"
             r"\DeclareMathSizes{14}{14}{9.8}{7}" + "\n"
@@ -184,7 +193,7 @@ def generate_pdf_file(
                         and None if an error occurred during the pdflatex execution.
     """
     if os.path.exists(tex_path):
-        command = "pdflatex -halt-on-error -output-directory={} {}".format(
+        command = "pdflatex -interaction=nonstopmode -halt-on-error -output-directory={} {}".format(
             pdf_dir, tex_path
         )
         if is_debug:

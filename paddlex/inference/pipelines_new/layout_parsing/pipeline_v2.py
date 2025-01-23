@@ -13,11 +13,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import os
-import sys
-from typing import Any, Dict, Optional, Union
-
-import cv2
+from typing import Optional, Union, Tuple
 import numpy as np
 
 from ....utils import logging
@@ -26,10 +22,9 @@ from ...common.reader import ReadImage
 from ...models_new.object_detection.result import DetResult
 from ...utils.pp_option import PaddlePredictorOption
 from ..base import BasePipeline
-from ..components import convert_points_to_boxes
 from ..ocr.result import OCRResult
 from .result_v2 import LayoutParsingResultV2
-from .utils import get_structure_res
+from .utils import get_single_block_parsing_res
 from .utils import get_sub_regions_ocr_res
 
 # [TODO] 待更新models_new到models
@@ -102,7 +97,22 @@ class LayoutParsingPipelineV2(BasePipeline):
             "LayoutDetection",
             {"model_config_error": "config error for layout_det_model!"},
         )
-        self.layout_det_model = self.create_model(layout_det_config)
+        layout_kwargs = {}
+        if (threshold := layout_det_config.get("threshold", None)) is not None:
+            layout_kwargs["threshold"] = threshold
+        if (layout_nms := layout_det_config.get("layout_nms", None)) is not None:
+            layout_kwargs["layout_nms"] = layout_nms
+        if (
+            layout_unclip_ratio := layout_det_config.get("layout_unclip_ratio", None)
+        ) is not None:
+            layout_kwargs["layout_unclip_ratio"] = layout_unclip_ratio
+        if (
+            layout_merge_bboxes_mode := layout_det_config.get(
+                "layout_merge_bboxes_mode", None
+            )
+        ) is not None:
+            layout_kwargs["layout_merge_bboxes_mode"] = layout_merge_bboxes_mode
+        self.layout_det_model = self.create_model(layout_det_config, **layout_kwargs)
 
         if self.use_general_ocr or self.use_table_recognition:
             general_ocr_config = config.get("SubPipelines", {}).get(
@@ -168,7 +178,10 @@ class LayoutParsingPipelineV2(BasePipeline):
             if box_info["label"].lower() in ["formula", "table", "seal"]:
                 object_boxes.append(box_info["coordinate"])
         object_boxes = np.array(object_boxes)
-        return get_sub_regions_ocr_res(overall_ocr_res, object_boxes, flag_within=False)
+        sub_regions_ocr_res = get_sub_regions_ocr_res(
+            overall_ocr_res, object_boxes, flag_within=False
+        )
+        return sub_regions_ocr_res
 
     def check_model_settings_valid(self, input_params: dict) -> bool:
         """
@@ -206,6 +219,49 @@ class LayoutParsingPipelineV2(BasePipeline):
             return False
 
         return True
+
+    def get_layout_parsing_res(
+        self,
+        image: list,
+        layout_det_res: DetResult,
+        overall_ocr_res: OCRResult,
+        table_res_list: list,
+        seal_res_list: list,
+    ) -> list:
+        """
+        Retrieves the layout parsing result based on the layout detection result, OCR result, and other recognition results.
+        Args:
+            image (list): The input image.
+            overall_ocr_res (OCRResult): An object containing the overall OCR results, including detected text boxes and recognized text. The structure is expected to have:
+            - "input_img": The image on which OCR was performed.
+            - "dt_boxes": A list of detected text box coordinates.
+            - "rec_texts": A list of recognized text corresponding to the detected boxes.
+
+            layout_det_res (DetResult): An object containing the layout detection results, including detected layout boxes and their labels. The structure is expected to have:
+                - "boxes": A list of dictionaries with keys "coordinate" for box coordinates and "label" for the type of content.
+
+            table_res_list (list): A list of table detection results, where each item is a dictionary containing:
+                - "layout_bbox": The bounding box of the table layout.
+                - "pred_html": The predicted HTML representation of the table.
+        Returns:
+            list: A list of dictionaries representing the layout parsing result.
+        """
+        layout_parsing_res = get_single_block_parsing_res(
+            overall_ocr_res=overall_ocr_res,
+            layout_det_res=layout_det_res,
+            table_res_list=table_res_list,
+            seal_res_list=seal_res_list,
+        )
+
+        parsing_res_list = [
+            {
+                "block_bbox": [0, 0, 2550, 2550],
+                "block_size": [image.shape[1], image.shape[0]],
+                "sub_blocks": layout_parsing_res,
+            },
+        ]
+
+        return parsing_res_list
 
     def get_model_settings(
         self,
@@ -278,6 +334,10 @@ class LayoutParsingPipelineV2(BasePipeline):
         seal_det_box_thresh: float | None = None,
         seal_det_unclip_ratio: float | None = None,
         seal_rec_score_thresh: float | None = None,
+        layout_threshold: Optional[Union[float, dict]] = None,
+        layout_nms: Optional[bool] = None,
+        layout_unclip_ratio: Optional[Union[float, Tuple[float, float]]] = None,
+        layout_merge_bboxes_mode: Optional[str] = None,
         **kwargs,
     ) -> LayoutParsingResultV2:
         """
@@ -309,13 +369,7 @@ class LayoutParsingPipelineV2(BasePipeline):
             yield {"error": "the input params for model settings are invalid!"}
 
         for img_id, batch_data in enumerate(self.batch_sampler(input)):
-            if not isinstance(batch_data[0], str):
-                # TODO: add support input_pth for ndarray and pdf
-                input_path = f"{img_id}"
-            else:
-                input_path = batch_data[0]
-
-            image_array = self.img_reader(batch_data)[0]
+            image_array = self.img_reader(batch_data.instances)[0]
 
             if model_settings["use_doc_preprocessor"]:
                 doc_preprocessor_res = next(
@@ -331,7 +385,13 @@ class LayoutParsingPipelineV2(BasePipeline):
             doc_preprocessor_image = doc_preprocessor_res["output_img"]
 
             layout_det_res = next(
-                self.layout_det_model(doc_preprocessor_image),
+                self.layout_det_model(
+                    doc_preprocessor_image,
+                    threshold=layout_threshold,
+                    layout_nms=layout_nms,
+                    layout_unclip_ratio=layout_unclip_ratio,
+                    layout_merge_bboxes_mode=layout_merge_bboxes_mode,
+                )
             )
 
             if model_settings["use_formula_recognition"]:
@@ -406,6 +466,7 @@ class LayoutParsingPipelineV2(BasePipeline):
                         use_ocr_model=False,
                         overall_ocr_res=overall_ocr_res,
                         layout_det_res=layout_det_res,
+                        cell_sort_by_y_projection=True,
                     ),
                 )
                 table_res_list = table_res_all["table_res_list"]
@@ -438,21 +499,17 @@ class LayoutParsingPipelineV2(BasePipeline):
                     "input_img"
                 ]
 
-            structure_res = get_structure_res(
-                overall_ocr_res,
-                layout_det_res,
-                table_res_list,
+            parsing_res_list = self.get_layout_parsing_res(
+                doc_preprocessor_image,
+                layout_det_res=layout_det_res,
+                overall_ocr_res=overall_ocr_res,
+                table_res_list=table_res_list,
+                seal_res_list=seal_res_list,
             )
-            structure_res_list = [
-                {
-                    "block_bbox": [0, 0, 2550, 2550],
-                    "block_size": [image_array.shape[1], image_array.shape[0]],
-                    "sub_blocks": structure_res,
-                },
-            ]
 
             single_img_res = {
-                "input_path": input_path,
+                "input_path": batch_data.input_paths[0],
+                "page_index": batch_data.page_indexes[0],
                 "doc_preprocessor_res": doc_preprocessor_res,
                 "layout_det_res": layout_det_res,
                 "overall_ocr_res": overall_ocr_res,
@@ -460,7 +517,7 @@ class LayoutParsingPipelineV2(BasePipeline):
                 "table_res_list": table_res_list,
                 "seal_res_list": seal_res_list,
                 "formula_res_list": formula_res_list,
-                "layout_parsing_result": structure_res_list,
+                "parsing_res_list": parsing_res_list,
                 "model_settings": model_settings,
             }
             yield LayoutParsingResultV2(single_img_res)

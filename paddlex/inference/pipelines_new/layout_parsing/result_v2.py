@@ -94,16 +94,16 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
                 key = f"seal_res_region{seal_region_id}"
                 res_img_dict[key] = sub_seal_res_dict["ocr_res_img"]
 
-        if (
-            model_settings["use_formula_recognition"]
-            and len(self["formula_res_list"]) > 0
-        ):
-            for sno in range(len(self["formula_res_list"])):
-                formula_res = self["formula_res_list"][sno]
-                formula_region_id = formula_res["formula_region_id"]
-                sub_formula_res_dict = formula_res.img
-                key = f"formula_res_region{formula_region_id}"
-                res_img_dict[key] = sub_formula_res_dict["res"]
+        # if (
+        #     model_settings["use_formula_recognition"]
+        #     and len(self["formula_res_list"]) > 0
+        # ):
+        #     for sno in range(len(self["formula_res_list"])):
+        #         formula_res = self["formula_res_list"][sno]
+        #         formula_region_id = formula_res["formula_region_id"]
+        #         sub_formula_res_dict = formula_res.img
+        #         key = f"formula_res_region{formula_region_id}"
+        #         res_img_dict[key] = sub_formula_res_dict["res"]
 
         return res_img_dict
 
@@ -248,13 +248,19 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
         Returns:
             None
         """
-        input_name = self["input_path"]
+        input_path = Path(self["input_path"])
+        page_index = self["page_index"]
         save_path = Path(save_path)
         if save_path.suffix.lower() not in (".jpg", ".png"):
-            save_path = save_path / f"{input_name}.jpg"
+            if input_path.suffix.lower() == ".pdf":
+                save_path = save_path / f"page_{page_index}.jpg"
+            else:
+                save_path = save_path / f"{input_path.stem}.jpg"
         else:
             save_path = save_path.with_suffix("")
-        ordering_image_path = save_path.parent / f"{save_path.stem}_ordering.jpg"
+        ordering_image_path = (
+            save_path.parent / f"{save_path.stem}_layout_order_res.jpg"
+        )
 
         try:
             image = Image.fromarray(self["doc_preprocessor_res"]["output_img"])
@@ -264,7 +270,7 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
 
         draw = ImageDraw.Draw(image, "RGBA")
 
-        parsing_result = self["layout_parsing_result"]
+        parsing_result = self["parsing_res_list"]
         for block in parsing_result:
             if self.already_sorted == False:
                 block = get_layout_ordering(
@@ -304,9 +310,14 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
         Returns:
             Dict
         """
-        save_path = Path(self.save_path)
+        if self.save_path == None:
+            is_save_mk_img = False
+        else:
+            is_save_mk_img = True
+            save_path = Path(self.save_path)
 
-        parsing_result = self["layout_parsing_result"]
+        parsing_result = self["parsing_res_list"]
+
         for block in parsing_result:
             if self.already_sorted == False:
                 block = get_layout_ordering(
@@ -322,11 +333,13 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
                     already_sorted=self.already_sorted,
                 )
         self.already_sorted == True
-        recursive_img_array2path(
-            self["layout_parsing_result"],
-            save_path.parent,
-            labels=["img"],
-        )
+
+        if is_save_mk_img:
+            recursive_img_array2path(
+                self["parsing_res_list"],
+                save_path.parent,
+                labels=["img"],
+            )
 
         def _format_data(obj):
 
@@ -355,6 +368,9 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
                 )
 
             def format_image():
+                if is_save_mk_img is False:
+                    return ""
+
                 img_tags = []
                 if "img" in sub_block["image"]:
                     img_tags.append(
@@ -415,33 +431,26 @@ class LayoutParsingResultV2(BaseCVResult, HtmlMixin, XlsxMixin, MarkdownMixin):
                 "table_title": lambda: format_centered_text("table_title"),
                 "figure_title": lambda: format_centered_text("figure_title"),
                 "chart_title": lambda: format_centered_text("chart_title"),
-                "text": lambda: sub_block["text"].strip("\n"),
+                "text": lambda: sub_block["text"]
+                .replace("-\n", " ")
+                .replace("\n", " "),
                 # 'number': lambda: str(sub_block['number']),
-                "abstract": lambda: "\n" + sub_block["abstract"].strip("\n"),
+                "abstract": lambda: sub_block["abstract"]
+                .replace("-\n", " ")
+                .replace("\n", " "),
                 "content": lambda: sub_block["content"]
-                .replace("-\n", "")
-                .replace("\n", " ")
-                .strip(),
+                .replace("-\n", " ")
+                .replace("\n", " "),
                 "image": format_image,
                 "chart": format_chart,
-                "formula": lambda: f"$${sub_block['formula']}$$".replace(
-                    "-\n",
-                    "",
-                ).replace("\n", " "),
+                "formula": lambda: f"$${sub_block['formula']}$$",
                 "table": format_table,
-                "reference": format_reference,
-                "algorithm": lambda: "\n"
-                + f"**Algorithm**: {sub_block['algorithm']}".replace("-\n", "").replace(
-                    "\n",
-                    " ",
-                ),
-                "seal": lambda: "\n"
-                + f"**Seal**: {sub_block['seal']}".replace("-\n", "").replace(
-                    "\n",
-                    " ",
-                ),
+                # "reference": format_reference,
+                "reference": lambda: sub_block["reference"],
+                "algorithm": lambda: sub_block["algorithm"].strip("\n"),
+                "seal": lambda: sub_block["seal"].strip("\n"),
             }
-            parsing_result = obj["layout_parsing_result"]
+            parsing_result = obj["parsing_res_list"]
             markdown_content = ""
             for block in parsing_result:  # for each block show ordering results
                 sub_blocks = block["sub_blocks"]
