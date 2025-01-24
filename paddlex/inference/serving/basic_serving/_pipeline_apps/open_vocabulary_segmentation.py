@@ -59,7 +59,7 @@ def create_pipeline_app(pipeline: Any, app_config: AppConfig) -> FastAPI:
             await pipeline.infer(
                 image,
                 prompt=request.prompt,
-                prompt_type=request.prompt_type,
+                prompt_type=request.promptType,
             )
         )[0]
 
@@ -78,7 +78,7 @@ def create_pipeline_app(pipeline: Any, app_config: AppConfig) -> FastAPI:
         return ResultResponse[InferResult](
             logId=serving_utils.generate_log_id(),
             result=InferResult(
-                masks=rle_masks, mask_infos=mask_infos, image=output_image_base64
+                masks=rle_masks, maskInfos=mask_infos, image=output_image_base64
             ),
         )
 
